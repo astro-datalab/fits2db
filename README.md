@@ -29,11 +29,11 @@ this way is 3-5X faster than loading the corresponding CSV files, and up to
 
 Additionally, various other ASCII output formats are supported, including:
 
-* ASV         Ascii-separated values
-* BSV         Bar-separated values
-* CSV         Comma-separated values
-* TSV         Tab-separated values
-* IPAC        An IPAC formatted table values
+* ASV         -- Ascii-separated values
+* BSV         -- Bar-separated values
+* CSV         -- Comma-separated values
+* TSV         -- Tab-separated values
+* IPAC        -- An IPAC formatted table values
 
 ### To Build:
 
