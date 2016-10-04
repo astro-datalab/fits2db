@@ -1,12 +1,57 @@
 
-# FITS2DB -- Convert FITS Binary Tables to Database formats
+## FITS2DB --Convert FITS Binary Tables to various database formats.
 
+### Summary:
 
-##  Usage:
+This task converts FITS Binary Tables to SQL suitable for creating or
+appending database tables.  Currently supported databases include:
+
+..* PostgreSQL
+..* MySQL
+..* SQLite
+
+The specific flavor of SQL instruction created depends on the value passed
+to the `--sql` option.  Rather than connect directly to the database, the
+task writes the SQL to the stdout and assumes the output is piped to the
+appropriate database client.  For example,
+
+    % fits2db --create --table=test mytable.fits | psql -d mydb -U sarah
+
+This allows the conversion and database ingest to happen in parallel.
+
+The task is designed to be as fast as possible (e.g. a binary mode is
+available for Postgres databases) and operate on very large files (e.g. tables
+as large as 10GB have been tested) or large numbers of files (e.g. >100,000
+files have been tested) efficiently.  Benchmarks show loading FITS tables
+this way is 3-5X faster than loading the corresponding CSV files, and up to
+40X faster than using other tools that manage FITS tables directly (e.g.
+[STILTS](http://www.star.bris.ac.uk/~mbt/stilts/).
+
+Additionally, various other ASCII output formats are supported, including:
+
+..* ASV         Ascii-separated values
+..* BSV         Bar-separated values
+..* CSV         Comma-separated values
+..* TSV         Tab-separated values
+..* IPAC        An IPAC formatted table values
+
+### To Build:
+
+To build the program, use the include `Makefile` and simply type 'make', or
+compile the source manually with a command such as:
+
+    % cc -o fits2db -I/usr/include/cfitsio fits2db.c \
+            -L/usr/local/lib -lcfitsio -lm
+
+The task requires CFITSIO (not included here) in order to comple, so the
+`-I` and `-L` flags (or the definitions in the Makefile) may need to be 
+modified for your system.
+
+###  Usage:
 
     fits2db [<opts>] [ <input> ... ]
 
-where <opts> include:
+where `<opts>` include:
 
 ```
       -h,--help                this message
@@ -50,7 +95,7 @@ where <opts> include:
 ```
 
 
-##  Examples:
+### Examples:
 
     1)  Load all FITS tables in directory to a new Postgres database table
         named 'mytab' in binary mode, expanding arrays to new columns::
@@ -99,6 +144,7 @@ Examples of this type of filtering include:
     fits2db tab.fits[col -PI,-ETA]         - list all but the PI and ETA cols
     fits2db tab.fits[col -PI][#row < 101]  - combined case
 
-For details on table row and column filtering, see CFITSIO documentation.
+For details on table row and column filtering, see the [CFITSIO documentation]
+(https://heasarc.gsfc.nasa.gov/docs/software/fitsio/c/c_user/cfitsio.html).
 
 

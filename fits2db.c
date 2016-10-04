@@ -50,8 +50,8 @@
  *
  *
  *  @file       fits2db.c
- *  @author     Mike Fitzpatrick
- *  @date       8/21/16
+ *  @author     Mike Fitzpatrick, NOAO Data Lab Project, Tucson, AZ, USA
+ *  @date       10/1/16
  *  @version    1.0
  *
  *  @brief     Convert FITS Binary Tables to one or more database files.
