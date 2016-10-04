@@ -15,9 +15,13 @@ to the `--sql` option.  Rather than connect directly to the database, the
 task writes the SQL to the stdout and assumes the output is piped to the
 appropriate database client.  For example,
 
-    % fits2db --create --table=test mytable.fits | psql -d mydb -U sarah
+    % fits2db --sql=postgres --create --table=test mytable.fits | psql -d mydb
+    % fits2db --sql=mysql --create --dbname=mydb --table=test -C *.fits | mysql
+    % fits2db --sql=sqlite --create --table=test *.fits | sqlite mydb.db
 
-This allows the conversion and database ingest to happen in parallel.
+This allows the conversion and database ingest to happen in parallel and
+additionally provides access to all the database client options without
+requiring them to be supported directly by the task.
 
 The task is designed to be as fast as possible (e.g. a binary mode is
 available for Postgres databases) and operate on very large files (e.g. tables
