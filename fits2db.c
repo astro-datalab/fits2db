@@ -488,6 +488,10 @@ main (int argc, char **argv)
     }
     if (do_binary)
         bundle = 1;
+    if (explode && format == TAB_POSTGRES) {
+	delimiter = '\t';
+	arr_delimiter = ' ';
+    } 
 
 
     /*  Generate the output file lists if needed.
@@ -602,16 +606,10 @@ main (int argc, char **argv)
                     fprintf (stderr, "Processing file: %s\n", ifname);
 
                 if (!noop)
-		    if (access (ifname, F_OK) == 0)
-                        dl_fits2db (ifname, ofname, i, bnum, nfiles);
-		    else {
-			fprintf (stderr, "Error: Cannot access '%s'\n", ifname);
-			continue;
-		    }
+                    dl_fits2db (ifname, ofname, i, bnum, nfiles);
 
                 /* Increment the filenumber within the bundle so we can keep
-                 * track of headers.
-                 */
+                 * track of headers.  */
                 bnum = ((bnum+1) == bundle ? 0 : (bnum+1));
             } else
                 fprintf (stderr, "Error: Skipping non-FITS file '%s'.\n", 
@@ -828,7 +826,7 @@ dl_fits2db (char *iname, char *oname, int filenum, int bnum, int nfiles)
                      */
                     for (i=firstcol; i <= ncols; i++)
                         dp = dl_printCol (dp, &inColumns[i], 
-                                    (i < ncols ? delimiter : '\n'));
+                                    (i < ncols ? arr_delimiter : '\n'));
 
 
                     if (format == TAB_MYSQL || format == TAB_SQLITE) {
@@ -1818,7 +1816,8 @@ dl_printShort (unsigned char *dp, ColPtr col)
     int   i, j, len = 0;
 
 
-    if (mach_swap && !do_binary)
+    //if (mach_swap && !do_binary)
+    if (mach_swap && do_binary)
         bswap2 ((char *)dp, (char *)dp, sz_short * col->repeat);
 
     if (do_binary) {
@@ -1888,7 +1887,8 @@ dl_printInt (unsigned char *dp, ColPtr col)
     int   i, j, len = 0;
 
 
-    if (mach_swap && !do_binary)
+    //if (mach_swap && !do_binary)
+    if (mach_swap && do_binary)
         bswap4 ((char *)dp, 1, (char *)dp, 1, sz_int * col->repeat);
 
     if (do_binary) {
@@ -1957,7 +1957,8 @@ dl_printLong (unsigned char *dp, ColPtr col)
     int   i, j, len = 0;
 
 
-    if (mach_swap && !do_binary)
+    //if (mach_swap && !do_binary)
+    if (mach_swap && do_binary)
         bswap8 ((char *)dp, 1, (char *)dp, 1, sizeof(long) * col->repeat);
         // FIXME -- We're in trouble if we comes across a 64-bit int column
         //bswap4 ((char *)dp, 1, (char *)dp, 1, sz_long * col->repeat);
@@ -2561,8 +2562,16 @@ dl_isGZip (char *fname)
 {
     int   fp, value = 0;
     unsigned short sval = 0;
+    char name[SZ_FNAME], *ip;
 
-    if ((fp = open (fname, O_RDONLY))) {
+    /*  Remove any filename modifiers from the input specification.
+     */
+    memset (name, 0, SZ_FNAME);
+    strcpy (name, fname);
+    if ((ip = strchr (name, (int)'[')) )
+        *ip = '\0';
+
+    if ((fp = open (name, O_RDONLY))) {
         read (fp, &sval, 2);
         if (sval == 35615)              // ushort value of "\037\213"
             value = 1;
