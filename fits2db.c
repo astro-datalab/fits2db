@@ -490,7 +490,7 @@ main (int argc, char **argv)
         bundle = 1;
     if (explode && format == TAB_POSTGRES) {
 	delimiter = '\t';
-	arr_delimiter = ' ';
+	arr_delimiter = '\t';
     } 
 
 
