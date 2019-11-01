@@ -741,8 +741,10 @@ dl_fits2db (char *iname, char *oname, int filenum, int bnum, int nfiles)
                     if (do_create)
                         dl_createSQLTable (tablename, fptr, firstcol, lastcol,
                             ofd);
-                    if (do_truncate)
+                    if (do_truncate) {
                         fprintf (ofd, "TRUNCATE TABLE %s;\n", tablename);
+                        fflush (ofd);
+                    }
 
                 }
             } else {
@@ -1269,11 +1271,14 @@ dl_createSQLTable (char *tablename, fitsfile *fptr, int firstcol, int lastcol,
     if (dbname && format == TAB_MYSQL) {
         fprintf (ofd, "CREATE DATABASE IF NOT EXISTS %s;\n", dbname);
         fprintf (ofd, "USE %s;\n", dbname);
+        fflush (ofd);
     }
 
                     
-    if (do_drop)
+    if (do_drop) {
         fprintf (ofd, "DROP TABLE IF EXISTS %s CASCADE;\n", tablename);
+        fflush (ofd);
+    }
                         
     fprintf (ofd, "CREATE TABLE IF NOT EXISTS %s (\n", tablename);
 
