@@ -741,8 +741,10 @@ dl_fits2db (char *iname, char *oname, int filenum, int bnum, int nfiles)
                     if (do_create)
                         dl_createSQLTable (tablename, fptr, firstcol, lastcol,
                             ofd);
-                    if (do_truncate)
+                    if (do_truncate) {
                         fprintf (ofd, "TRUNCATE TABLE %s;\n", tablename);
+                        fflush (ofd);
+                    }
 
                 }
             } else {
@@ -1269,11 +1271,14 @@ dl_createSQLTable (char *tablename, fitsfile *fptr, int firstcol, int lastcol,
     if (dbname && format == TAB_MYSQL) {
         fprintf (ofd, "CREATE DATABASE IF NOT EXISTS %s;\n", dbname);
         fprintf (ofd, "USE %s;\n", dbname);
+        fflush (ofd);
     }
 
                     
-    if (do_drop)
+    if (do_drop) {
         fprintf (ofd, "DROP TABLE IF EXISTS %s CASCADE;\n", tablename);
+        fflush (ofd);
+    }
                         
     fprintf (ofd, "CREATE TABLE IF NOT EXISTS %s (\n", tablename);
 
@@ -1816,8 +1821,8 @@ dl_printShort (unsigned char *dp, ColPtr col)
     int   i, j, len = 0;
 
 
-    //if (mach_swap && !do_binary)
-    if (mach_swap && do_binary)
+    //if (mach_swap && do_binary)
+    if (mach_swap && !do_binary)
         bswap2 ((char *)dp, (char *)dp, sz_short * col->repeat);
 
     if (do_binary) {
@@ -1887,8 +1892,8 @@ dl_printInt (unsigned char *dp, ColPtr col)
     int   i, j, len = 0;
 
 
-    //if (mach_swap && !do_binary)
-    if (mach_swap && do_binary)
+    //if (mach_swap && do_binary)
+    if (mach_swap && !do_binary)
         bswap4 ((char *)dp, 1, (char *)dp, 1, sz_int * col->repeat);
 
     if (do_binary) {
@@ -1957,11 +1962,9 @@ dl_printLong (unsigned char *dp, ColPtr col)
     int   i, j, len = 0;
 
 
-    //if (mach_swap && !do_binary)
-    if (mach_swap && do_binary)
+    //if (mach_swap && do_binary)
+    if (mach_swap && !do_binary)
         bswap8 ((char *)dp, 1, (char *)dp, 1, sizeof(long) * col->repeat);
-        // FIXME -- We're in trouble if we comes across a 64-bit int column
-        //bswap4 ((char *)dp, 1, (char *)dp, 1, sz_long * col->repeat);
 
     if (do_binary) {
         unsigned int sz_val = 0;
@@ -2200,8 +2203,9 @@ dl_printSerial (void)
     unsigned int sz_val = htonl(sz_int);
     char  valbuf[SZ_VALBUF];
 
-    if (mach_swap && do_binary)
-        bswap4 ((unsigned char *)&ival, 1, (unsigned char *)&ival, 1, sz_int);
+    //if (mach_swap && do_binary)
+    if (mach_swap && !do_binary)
+        bswap4 ((char *)&ival, 1, (char *)&ival, 1, sz_int);
 
     if (do_binary) {
         memcpy (optr, &sz_val, sz_int);         	optr += sz_int;
@@ -2231,8 +2235,9 @@ dl_printRandom (void)
     char  valbuf[SZ_VALBUF];
 
 
-    if (mach_swap && do_binary)
-        bswap4 ((unsigned char *)&rval, 1, (unsigned char *)&rval, 1, sz_float);
+    //if (mach_swap && do_binary)
+    if (mach_swap && !do_binary)
+        bswap4 ((char *)&rval, 1, (char *)&rval, 1, sz_float);
 
     if (do_binary) {
         sz_val = htonl(sz_float);
