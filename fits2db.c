@@ -2205,7 +2205,7 @@ dl_printSerial (void)
 
     //if (mach_swap && do_binary)
     if (mach_swap && !do_binary)
-        bswap4 ((unsigned char *)&ival, 1, (unsigned char *)&ival, 1, sz_int);
+        bswap4 ((char *)&ival, 1, (char *)&ival, 1, sz_int);
 
     if (do_binary) {
         memcpy (optr, &sz_val, sz_int);         	optr += sz_int;
@@ -2237,7 +2237,7 @@ dl_printRandom (void)
 
     //if (mach_swap && do_binary)
     if (mach_swap && !do_binary)
-        bswap4 ((unsigned char *)&rval, 1, (unsigned char *)&rval, 1, sz_float);
+        bswap4 ((char *)&rval, 1, (char *)&rval, 1, sz_float);
 
     if (do_binary) {
         sz_val = htonl(sz_float);
