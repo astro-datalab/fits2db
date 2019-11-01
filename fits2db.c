@@ -1821,8 +1821,8 @@ dl_printShort (unsigned char *dp, ColPtr col)
     int   i, j, len = 0;
 
 
-    //if (mach_swap && !do_binary)
-    if (mach_swap && do_binary)
+    //if (mach_swap && do_binary)
+    if (mach_swap && !do_binary)
         bswap2 ((char *)dp, (char *)dp, sz_short * col->repeat);
 
     if (do_binary) {
@@ -1892,8 +1892,8 @@ dl_printInt (unsigned char *dp, ColPtr col)
     int   i, j, len = 0;
 
 
-    //if (mach_swap && !do_binary)
-    if (mach_swap && do_binary)
+    //if (mach_swap && do_binary)
+    if (mach_swap && !do_binary)
         bswap4 ((char *)dp, 1, (char *)dp, 1, sz_int * col->repeat);
 
     if (do_binary) {
@@ -1962,11 +1962,9 @@ dl_printLong (unsigned char *dp, ColPtr col)
     int   i, j, len = 0;
 
 
-    //if (mach_swap && !do_binary)
-    if (mach_swap && do_binary)
+    //if (mach_swap && do_binary)
+    if (mach_swap && !do_binary)
         bswap8 ((char *)dp, 1, (char *)dp, 1, sizeof(long) * col->repeat);
-        // FIXME -- We're in trouble if we comes across a 64-bit int column
-        //bswap4 ((char *)dp, 1, (char *)dp, 1, sz_long * col->repeat);
 
     if (do_binary) {
         unsigned int sz_val = 0;
@@ -2205,7 +2203,8 @@ dl_printSerial (void)
     unsigned int sz_val = htonl(sz_int);
     char  valbuf[SZ_VALBUF];
 
-    if (mach_swap && do_binary)
+    //if (mach_swap && do_binary)
+    if (mach_swap && !do_binary)
         bswap4 ((unsigned char *)&ival, 1, (unsigned char *)&ival, 1, sz_int);
 
     if (do_binary) {
@@ -2236,7 +2235,8 @@ dl_printRandom (void)
     char  valbuf[SZ_VALBUF];
 
 
-    if (mach_swap && do_binary)
+    //if (mach_swap && do_binary)
+    if (mach_swap && !do_binary)
         bswap4 ((unsigned char *)&rval, 1, (unsigned char *)&rval, 1, sz_float);
 
     if (do_binary) {
