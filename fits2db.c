@@ -2235,10 +2235,6 @@ dl_printRandom (void)
     char  valbuf[SZ_VALBUF];
 
 
-    //if (mach_swap && do_binary)
-    if (mach_swap && !do_binary)
-        bswap4 ((char *)&rval, 1, (char *)&rval, 1, sz_float);
-
     if (do_binary) {
         sz_val = htonl(sz_float);
         memcpy (optr, &sz_val, sz_int);           	optr += sz_int;
@@ -2247,7 +2243,6 @@ dl_printRandom (void)
 
     } else {
         memset (valbuf, 0, SZ_VALBUF);
-        //sprintf (valbuf, "%c%f", delimiter, rval);
         sprintf (valbuf, "%f", rval);
         memcpy (optr, valbuf, (len = strlen (valbuf)));
         olen += len;
