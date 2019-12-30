@@ -2895,6 +2895,8 @@ Usage (void)
 "      --create                 create DB table from input table structure\n"
 "      --truncate               truncate DB table before loading\n"
 "      --pkey=<colname>         create a serial primary key column <colname>\n"
+"      --sid=<colname>          create a serial rownumber column <colname>\n"
+"      --rid=<colname>          create a random-value (range: 0-100) column <colname>\n"
 "\n"
 "\n"
 "  Examples:\n"
