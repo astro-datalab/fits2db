@@ -659,7 +659,7 @@ dl_fits2db (char *iname, char *oname, int filenum, int bnum, int nfiles)
     //ColPtr col = (ColPtr) NULL;
 
     unsigned char *data = NULL, *dp = NULL;
-    long   naxis1, rowsize = 0, nbytes = 0, firstchar = 1, totrows = 0;
+    long   naxis1, naxis2, rowsize = 0, nbytes = 0, firstchar = 1, totrows = 0;
 
 
     mach_swap = is_swapped ();
@@ -707,6 +707,7 @@ dl_fits2db (char *iname, char *oname, int filenum, int bnum, int nfiles)
              *           when we have multi-file input.
              */
             fits_read_key (fptr, TLONG, "NAXIS1", &naxis1, NULL, &status);
+            fits_read_key (fptr, TLONG, "NAXIS2", &naxis2, NULL, &status);
             if (filenum == 0 || !concat) {
 		dl_getColInfo (fptr, firstcol, lastcol);
 
@@ -778,9 +779,12 @@ dl_fits2db (char *iname, char *oname, int filenum, int bnum, int nfiles)
             /*  Allocate the I/O buffer.
              */                
             nbytes = nelem * naxis1;
+            if (sidname) nbytes += (8 * naxis2);
+            if (ridname) nbytes += (8 * naxis2);
             if (debug)
-                fprintf (stderr, "nelem=%d  naxis1=%ld  nbytes=%ld  nrows=%d\n",
-                    nelem, naxis1, nbytes, (int)nrows);
+                fprintf (stderr,
+		    "nelem=%d  naxis=[%ld,%ld]  nbytes=%ld  nrows=%d\n",
+                    nelem, naxis1, naxis2, nbytes, (int)nrows);
                 
             data = (unsigned char *) calloc (1, nbytes * 8);
             obuf = (char *) calloc (1, nbytes * 8);
@@ -812,8 +816,10 @@ dl_fits2db (char *iname, char *oname, int filenum, int bnum, int nfiles)
                 for (j=firstrow; j <= nelem; j++) {
                     if (format == TAB_POSTGRES && do_binary) {
                         unsigned short val = 0;
-                        val = (explode ? htons ((short) numOutCols) : 
-                                         htons ((short) ncols));
+            		if (sidname) val++;
+            		if (ridname) val++;
+                        val = (explode ? htons ((short) numOutCols+val) : 
+                                         htons ((short) ncols+val));
                         memcpy (optr, &val, sz_short);
                         optr += sz_short;
                         olen += sz_short;
@@ -2212,7 +2218,6 @@ dl_printSerial (void)
 
     } else {
         memset (valbuf, 0, SZ_VALBUF);
-        //sprintf (valbuf, "%c%d", delimiter, ival);
         sprintf (valbuf, "%d", ival);
         memcpy (optr, valbuf, (len = strlen (valbuf)));
         olen += len;
