@@ -2238,6 +2238,8 @@ dl_printRandom (void)
 
 
     if (do_binary) {
+        if (mach_swap)
+            bswap4 ((char *)&rval, 1, (char *)&rval, 1, sz_float);
         sz_val = htonl(sz_float);
         memcpy (optr, &sz_val, sz_int);           	optr += sz_int;
         memcpy (optr, (char *)&rval, sz_float);   	optr += sz_float;
