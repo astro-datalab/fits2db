@@ -1327,7 +1327,7 @@ dl_printSQLHdr (char *tablename, fitsfile *fptr, int firstcol, int lastcol,
         if (format == TAB_POSTGRES) {
             fprintf (ofd, "\nCOPY %s (", tablename);
             dl_printHdr (firstcol, lastcol, ofd);
-            fprintf (ofd, ") from stdin;\n");
+            fprintf (ofd, ") FROM stdin DELIMITER '%c';\n", delimiter);
         } else if (format == TAB_MYSQL || format == TAB_SQLITE) {
             fprintf (ofd, "\nINSERT INTO %s (", tablename);
             dl_printHdr (firstcol, lastcol, ofd);
