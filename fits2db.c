@@ -2203,9 +2203,6 @@ dl_printSerial (void)
     unsigned int sz_val = htonl(sz_int);
     char  valbuf[SZ_VALBUF];
 
-    //if (mach_swap && do_binary)
-    if (mach_swap && !do_binary)
-        bswap4 ((char *)&ival, 1, (char *)&ival, 1, sz_int);
 
     if (do_binary) {
         memcpy (optr, &sz_val, sz_int);         	optr += sz_int;
