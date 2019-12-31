@@ -458,7 +458,7 @@ main (int argc, char **argv)
             do_create, do_drop, do_truncate);
         fprintf (stderr, "extnum=%d  extname='%s' rows='%s' expr='%s'\n",
             extnum, extname, rows, expr);
-        fprintf (stderr, "delimiter='%c' dbname='%s' sidname='%s' ridname='%s'\n",
+        fprintf (stderr, "delim='%c' dbname='%s' sidname='%s' ridname='%s'\n",
             delimiter, dbname, sidname, ridname);
         fprintf (stderr, "table = '%s'\n", (tablename ? tablename : "<none>"));
         for (i=0; i < nfiles; i++)
@@ -659,7 +659,7 @@ dl_fits2db (char *iname, char *oname, int filenum, int bnum, int nfiles)
     //ColPtr col = (ColPtr) NULL;
 
     unsigned char *data = NULL, *dp = NULL;
-    long   naxis1, rowsize = 0, nbytes = 0, firstchar = 1, totrows = 0;
+    long   naxis1, naxis2, rowsize = 0, nbytes = 0, firstchar = 1, totrows = 0;
 
 
     mach_swap = is_swapped ();
@@ -690,7 +690,6 @@ dl_fits2db (char *iname, char *oname, int filenum, int bnum, int nfiles)
             fits_get_rowsize (fptr, &rowsize, &status);
             nelem = rowsize;
 
-
             /*  Open the output file.
              */
             if (strcasecmp (oname, "stdout") == 0 || oname[0] == '-')
@@ -707,6 +706,7 @@ dl_fits2db (char *iname, char *oname, int filenum, int bnum, int nfiles)
              *           when we have multi-file input.
              */
             fits_read_key (fptr, TLONG, "NAXIS1", &naxis1, NULL, &status);
+            fits_read_key (fptr, TLONG, "NAXIS2", &naxis2, NULL, &status);
             if (filenum == 0 || !concat) {
 		dl_getColInfo (fptr, firstcol, lastcol);
 
@@ -778,9 +778,12 @@ dl_fits2db (char *iname, char *oname, int filenum, int bnum, int nfiles)
             /*  Allocate the I/O buffer.
              */                
             nbytes = nelem * naxis1;
+            if (sidname) nbytes += (8 * naxis2);
+            if (ridname) nbytes += (8 * naxis2);
             if (debug)
-                fprintf (stderr, "nelem=%d  naxis1=%ld  nbytes=%ld  nrows=%d\n",
-                    nelem, naxis1, nbytes, (int)nrows);
+                fprintf (stderr,
+		    "nelem=%d  naxis=[%ld,%ld]  nbytes=%ld  nrows=%d\n",
+                    nelem, naxis1, naxis2, nbytes, (int)nrows);
                 
             data = (unsigned char *) calloc (1, nbytes * 8);
             obuf = (char *) calloc (1, nbytes * 8);
@@ -812,8 +815,10 @@ dl_fits2db (char *iname, char *oname, int filenum, int bnum, int nfiles)
                 for (j=firstrow; j <= nelem; j++) {
                     if (format == TAB_POSTGRES && do_binary) {
                         unsigned short val = 0;
-                        val = (explode ? htons ((short) numOutCols) : 
-                                         htons ((short) ncols));
+            		if (sidname) val++;
+            		if (ridname) val++;
+                        val = (explode ? htons ((short) numOutCols+val) : 
+                                         htons ((short) ncols+val));
                         memcpy (optr, &val, sz_short);
                         optr += sz_short;
                         olen += sz_short;
@@ -861,8 +866,6 @@ dl_fits2db (char *iname, char *oname, int filenum, int bnum, int nfiles)
 
                 if (format == TAB_POSTGRES) {
                     optr = obuf, olen = 0;
-//fprintf (stderr, "writing EOF  f=%d nf=%d  bn=%d bun=%d\n",
-//        filenum, nfiles, bnum, bundle);
                     memset (optr, 0, nbytes);
                     if (do_binary) {
                         short  eof = -1;
@@ -1327,7 +1330,7 @@ dl_printSQLHdr (char *tablename, fitsfile *fptr, int firstcol, int lastcol,
         if (format == TAB_POSTGRES) {
             fprintf (ofd, "\nCOPY %s (", tablename);
             dl_printHdr (firstcol, lastcol, ofd);
-            fprintf (ofd, ") from stdin;\n");
+            fprintf (ofd, ") FROM stdin DELIMITER '%c';\n", delimiter);
         } else if (format == TAB_MYSQL || format == TAB_SQLITE) {
             fprintf (ofd, "\nINSERT INTO %s (", tablename);
             dl_printHdr (firstcol, lastcol, ofd);
@@ -1582,7 +1585,6 @@ dl_printCol (unsigned char *dp, ColPtr col, char end_char)
             dl_printValue (1);
         }
         if (sidname) {
-            //if (format == TAB_POSTGRES && do_binary) {
             if (format == TAB_POSTGRES) {
 		if (!do_binary)
                     *optr++ = delimiter, olen++; // append the comma or newline
@@ -1594,7 +1596,6 @@ dl_printCol (unsigned char *dp, ColPtr col, char end_char)
 		printf ("Unsupported serial format\n");
         }
         if (ridname) {
-            //if (format == TAB_POSTGRES && do_binary) {
             if (format == TAB_POSTGRES) {
 		if (!do_binary)
                     *optr++ = delimiter, olen++; // append the comma or newline
@@ -1629,14 +1630,10 @@ dl_printString (unsigned char *dp, ColPtr col)
         unsigned int val = 0;
         val = htonl (col->repeat);
 
-        //memcpy (optr, &val, sz_int);            optr += sz_int;
-        //memcpy (optr, dp, col->repeat);         optr += col->repeat;
-
         memset (buf, 0, SZ_TXTBUF);
         memcpy (buf, dp, col->repeat);
         //len = strlen ((bp = sstrip(buf)));
         len = strlen ((bp = buf));
-//fprintf (stderr, "STR:  '%s'  rep=%d  len=%d\n", buf, col->repeat, len);
         val = htonl (len);
 
         memcpy (optr, &val, sz_int);            optr += sz_int;
@@ -2203,9 +2200,6 @@ dl_printSerial (void)
     unsigned int sz_val = htonl(sz_int);
     char  valbuf[SZ_VALBUF];
 
-    //if (mach_swap && do_binary)
-    if (mach_swap && !do_binary)
-        bswap4 ((char *)&ival, 1, (char *)&ival, 1, sz_int);
 
     if (do_binary) {
         memcpy (optr, &sz_val, sz_int);         	optr += sz_int;
@@ -2215,7 +2209,6 @@ dl_printSerial (void)
 
     } else {
         memset (valbuf, 0, SZ_VALBUF);
-        //sprintf (valbuf, "%c%d", delimiter, ival);
         sprintf (valbuf, "%d", ival);
         memcpy (optr, valbuf, (len = strlen (valbuf)));
         olen += len;
@@ -2235,11 +2228,9 @@ dl_printRandom (void)
     char  valbuf[SZ_VALBUF];
 
 
-    //if (mach_swap && do_binary)
-    if (mach_swap && !do_binary)
-        bswap4 ((char *)&rval, 1, (char *)&rval, 1, sz_float);
-
     if (do_binary) {
+        if (mach_swap)
+            bswap4 ((char *)&rval, 1, (char *)&rval, 1, sz_float);
         sz_val = htonl(sz_float);
         memcpy (optr, &sz_val, sz_int);           	optr += sz_int;
         memcpy (optr, (char *)&rval, sz_float);   	optr += sz_float;
@@ -2247,7 +2238,6 @@ dl_printRandom (void)
 
     } else {
         memset (valbuf, 0, SZ_VALBUF);
-        //sprintf (valbuf, "%c%f", delimiter, rval);
         sprintf (valbuf, "%f", rval);
         memcpy (optr, valbuf, (len = strlen (valbuf)));
         olen += len;
@@ -2315,13 +2305,9 @@ dl_makeTableName (char *fname)
 static void
 dl_escapeCSV (char* in)
 {
-    //int   in_len = 0;
     char *ip = in, *op = esc_buf;
 
     memset (esc_buf, 0, SZ_ESCBUF);
-    //if (in)
-    //    in_len = strlen (in);
-
     *op++ = quote_char;
     for ( ; *ip; ip++) {
         *op++ = *ip;
@@ -2903,6 +2889,8 @@ Usage (void)
 "      --create                 create DB table from input table structure\n"
 "      --truncate               truncate DB table before loading\n"
 "      --pkey=<colname>         create a serial primary key column <colname>\n"
+"      --sid=<colname>          create a serial rownumber column <colname>\n"
+"      --rid=<colname>          create a random-value (range: 0-100) column <colname>\n"
 "\n"
 "\n"
 "  Examples:\n"
