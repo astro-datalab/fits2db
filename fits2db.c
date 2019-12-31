@@ -458,7 +458,7 @@ main (int argc, char **argv)
             do_create, do_drop, do_truncate);
         fprintf (stderr, "extnum=%d  extname='%s' rows='%s' expr='%s'\n",
             extnum, extname, rows, expr);
-        fprintf (stderr, "delimiter='%c' dbname='%s' sidname='%s' ridname='%s'\n",
+        fprintf (stderr, "delim='%c' dbname='%s' sidname='%s' ridname='%s'\n",
             delimiter, dbname, sidname, ridname);
         fprintf (stderr, "table = '%s'\n", (tablename ? tablename : "<none>"));
         for (i=0; i < nfiles; i++)
@@ -690,7 +690,6 @@ dl_fits2db (char *iname, char *oname, int filenum, int bnum, int nfiles)
             fits_get_rowsize (fptr, &rowsize, &status);
             nelem = rowsize;
 
-
             /*  Open the output file.
              */
             if (strcasecmp (oname, "stdout") == 0 || oname[0] == '-')
@@ -867,8 +866,6 @@ dl_fits2db (char *iname, char *oname, int filenum, int bnum, int nfiles)
 
                 if (format == TAB_POSTGRES) {
                     optr = obuf, olen = 0;
-//fprintf (stderr, "writing EOF  f=%d nf=%d  bn=%d bun=%d\n",
-//        filenum, nfiles, bnum, bundle);
                     memset (optr, 0, nbytes);
                     if (do_binary) {
                         short  eof = -1;
@@ -1588,7 +1585,6 @@ dl_printCol (unsigned char *dp, ColPtr col, char end_char)
             dl_printValue (1);
         }
         if (sidname) {
-            //if (format == TAB_POSTGRES && do_binary) {
             if (format == TAB_POSTGRES) {
 		if (!do_binary)
                     *optr++ = delimiter, olen++; // append the comma or newline
@@ -1600,7 +1596,6 @@ dl_printCol (unsigned char *dp, ColPtr col, char end_char)
 		printf ("Unsupported serial format\n");
         }
         if (ridname) {
-            //if (format == TAB_POSTGRES && do_binary) {
             if (format == TAB_POSTGRES) {
 		if (!do_binary)
                     *optr++ = delimiter, olen++; // append the comma or newline
@@ -1635,14 +1630,10 @@ dl_printString (unsigned char *dp, ColPtr col)
         unsigned int val = 0;
         val = htonl (col->repeat);
 
-        //memcpy (optr, &val, sz_int);            optr += sz_int;
-        //memcpy (optr, dp, col->repeat);         optr += col->repeat;
-
         memset (buf, 0, SZ_TXTBUF);
         memcpy (buf, dp, col->repeat);
         //len = strlen ((bp = sstrip(buf)));
         len = strlen ((bp = buf));
-//fprintf (stderr, "STR:  '%s'  rep=%d  len=%d\n", buf, col->repeat, len);
         val = htonl (len);
 
         memcpy (optr, &val, sz_int);            optr += sz_int;
@@ -2314,13 +2305,9 @@ dl_makeTableName (char *fname)
 static void
 dl_escapeCSV (char* in)
 {
-    //int   in_len = 0;
     char *ip = in, *op = esc_buf;
 
     memset (esc_buf, 0, SZ_ESCBUF);
-    //if (in)
-    //    in_len = strlen (in);
-
     *op++ = quote_char;
     for ( ; *ip; ip++) {
         *op++ = *ip;
