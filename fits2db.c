@@ -1632,8 +1632,10 @@ dl_printString (unsigned char *dp, ColPtr col)
 
         memset (buf, 0, SZ_TXTBUF);
         memcpy (buf, dp, col->repeat);
-        //len = strlen ((bp = sstrip(buf)));
-        len = strlen ((bp = buf));
+        if (do_strip)
+            len = strlen ((bp = sstrip(buf)));
+	else
+            len = strlen ((bp = buf));
         val = htonl (len);
 
         memcpy (optr, &val, sz_int);            optr += sz_int;
