@@ -422,7 +422,7 @@ main (int argc, char **argv)
                            format = TAB_SQLITE;
                        } else {                         // Postgres (default)
                             format = TAB_POSTGRES;
-                            delimiter = '\t';
+                            delimiter = ',';
                             arr_delimiter = ',';
                             do_quote = 0;
                        }
