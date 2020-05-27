@@ -41,6 +41,7 @@
  *      -O,--oids                create table with OIDs (Postgres only)
  *      -t,--table=<name>        create table named <name>
  *      -Z,--noload              don't create table load commands
+ *      -l,--log                 create a logfile of rowcounts
  *
  *      --add=<colname>          Add the nameed column (needs type info)
  *      --sql=<db>               output SQL correct for <db> type
@@ -203,6 +204,8 @@ int     serial_number   = 0;            // ID serial number
 int     debug           = 0;            // debug flag
 int     verbose         = 0;            // verbose output flag
 
+FILE   *log_fd          = (FILE *)NULL; // rowcount log file
+
 char   *pgcopy_hdr      = "PGCOPY\n\377\r\n\0\0\0\0\0";
 int     len_pgcopy_hdr  = 15;
 
@@ -240,6 +243,7 @@ static struct option long_opts[] = {
 
     { "binary",       no_argument,          NULL,   'B'},
     { "concat",       no_argument,          NULL,   'C'},
+    { "log",          no_argument,          NULL,   'l'},
     { "noheader",     no_argument,          NULL,   'H'},
     { "nostrip",      no_argument,          NULL,   'N'},
     { "oid",          no_argument,          NULL,   'O'},
@@ -323,6 +327,7 @@ static void bswap2 (char *a, char *b, int nbytes);
 static void bswap4 (char *a, int aoff, char *b, int boff, int nbytes);
 static void bswap8 (char *a, int aoff, char *b, int boff, int nbytes);
 static char *sstrip (char *s);
+static char *time_stamp (void);
 static int is_swapped (void);
 
 
@@ -394,6 +399,11 @@ main (int argc, char **argv)
 
 	    case 'i':  iname = strdup (optval);		break;  // --input
 	    case 'o':  oname = strdup (optval);		break;  // --output
+
+	    case 'l':
+                if ((log_fd = fopen ("fits2db.log", "a+")) == (FILE *) NULL)
+                    dl_error (3, "Error opening log file '%s'\n",
+                              "fits2db.log");
 
 	    case '0':  delimiter = ' ';
                        arr_delimiter=' ';
@@ -543,7 +553,13 @@ main (int argc, char **argv)
              *  to do table/row filtering.
              */
             strcpy (ifname, *iflist);
-            if (access (ifname, F_OK) < 0) {
+            if (strcmp(ifname,"stdin") == 0 || ifname[0] == '-') {
+                strcpy (ofname, "stdout");
+                oname = strdup ("stdout");
+                if (!noop)
+                    dl_fits2db (ifname, oname, i, i, nfiles);
+                break;
+            } else if (access (ifname, F_OK) < 0) {
                 fprintf (stderr, "Error: Cannot access file '%s'\n", ifname);
                 continue;
             }
@@ -601,6 +617,8 @@ main (int argc, char **argv)
 
             /*  Do the conversion if we have a FITS file.
              */
+            if (strcmp(ifname,"stdin") > 0 && ifname[0] != '-')
+                continue;
             if (dl_isFITS (ifname) || dl_isGZip (ifname)) {
                 if (verbose)
                     fprintf (stderr, "Processing file: %s\n", ifname);
@@ -636,6 +654,8 @@ main (int argc, char **argv)
     if (ifstart) free ((void *) ifstart);
 
     dl_paramFree (argc, pargv);
+
+    if (log_fd) fclose (log_fd);
 
     return (status);	/* status must be OK or ERR (i.e. 0 or 1)     	*/
 }
@@ -679,6 +699,13 @@ dl_fits2db (char *iname, char *oname, int filenum, int bnum, int nfiles)
         else {
             fits_get_num_rows (fptr, &nrows, &status);
             fits_get_num_cols (fptr, &ncols, &status);
+
+            if (log_fd) {
+                char *ts = time_stamp();
+                fprintf (log_fd, "%s   %s  %ld rows  %d cols\n",
+                            ts, iname, nrows, ncols);
+                free ((void *) ts);
+            }
 
             lastcol = ncols;
             chunk = (chunk > nrows ? nrows : chunk);
@@ -755,7 +782,6 @@ dl_fits2db (char *iname, char *oname, int filenum, int bnum, int nfiles)
                     return;
                 }
             }
-
 
             /*  If we're not loading the database, close the file and return.
              */
@@ -2288,6 +2314,9 @@ dl_makeTableName (char *fname)
 {
     char *ip, *tp, *np;
 
+    if (strcmp(fname,"stdin") == 0 || fname[0] == '-') 
+        return (strdup("stdin_tab"));
+
     ip = strdup (fname);                // copy the input name
     tp = strchr (ip, (int)'.');         // locate and kill the '.'
     *tp = '\0';
@@ -2672,7 +2701,7 @@ dl_paramInit (int argc, char *argv[], char *opts, struct option long_opts[])
 		    /*  Check for a flag of the form "-all", which should
 		     *  really be the long-form of "--all".  Rewrite the
 		     *  pargv value so the flag isn't interpreted incorrectly
-		     *  as "-a", "-l", "-l".
+		     *  as e.g. "-a", "-l", "-l".
 		     */
 		    int found = 0;
 		    for (k=0; (char *)long_opts[k].name; k++) {
@@ -2836,6 +2865,24 @@ dl_fextn (void)
 }
 
 
+/**
+ *  TIME_STAMP -- Return the current timestamp string.
+ */
+static char *
+time_stamp()
+{
+    char *timestamp = (char *)malloc(sizeof(char) * 16);
+    time_t ltime;
+    ltime=time(NULL);
+    struct tm *tm;
+    tm=localtime(&ltime);
+
+    sprintf(timestamp,"%04d-%02d-%02d %02d:%02d:%02d",
+        tm->tm_year+1900, tm->tm_mon, tm->tm_mday, 
+        tm->tm_hour, tm->tm_min, tm->tm_sec);
+    return timestamp;
+}
+
 
 /**
  *  USAGE -- Print task help summary.
@@ -2853,6 +2900,7 @@ Usage (void)
 "      -d,--debug               set debug flag\n"
 "      -v,--verbose             set verbose output flag\n"
 "      -n,--noop                set no-op flag\n"
+"      -l,--log                 create simple rowcount log\n"
 "\n"
 "                                   INPUT PROCESSING OPTIONS\n"
 "      -b,--bundle=<N>          bundle <N> files at a time\n"
