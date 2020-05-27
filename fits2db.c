@@ -543,7 +543,13 @@ main (int argc, char **argv)
              *  to do table/row filtering.
              */
             strcpy (ifname, *iflist);
-            if (access (ifname, F_OK) < 0) {
+            if (strcmp(ifname,"stdin") == 0 || ifname[0] == '-') {
+                strcpy (ofname, "stdout");
+                oname = strdup ("stdout");
+                if (!noop)
+                    dl_fits2db (ifname, oname, i, i, nfiles);
+                break;
+            } else if (access (ifname, F_OK) < 0) {
                 fprintf (stderr, "Error: Cannot access file '%s'\n", ifname);
                 continue;
             }
@@ -601,6 +607,8 @@ main (int argc, char **argv)
 
             /*  Do the conversion if we have a FITS file.
              */
+            if (strcmp(ifname,"stdin") > 0 && ifname[0] != '-')
+                continue;
             if (dl_isFITS (ifname) || dl_isGZip (ifname)) {
                 if (verbose)
                     fprintf (stderr, "Processing file: %s\n", ifname);
@@ -755,7 +763,6 @@ dl_fits2db (char *iname, char *oname, int filenum, int bnum, int nfiles)
                     return;
                 }
             }
-
 
             /*  If we're not loading the database, close the file and return.
              */
@@ -2287,6 +2294,9 @@ static char *
 dl_makeTableName (char *fname)
 {
     char *ip, *tp, *np;
+
+    if (strcmp(fname,"stdin") == 0 || fname[0] == '-') 
+        return (strdup("stdin_tab"));
 
     ip = strdup (fname);                // copy the input name
     tp = strchr (ip, (int)'.');         // locate and kill the '.'
