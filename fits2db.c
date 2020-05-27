@@ -2900,6 +2900,7 @@ Usage (void)
 "      -d,--debug               set debug flag\n"
 "      -v,--verbose             set verbose output flag\n"
 "      -n,--noop                set no-op flag\n"
+"      -l,--log                 create simple rowcount log\n"
 "\n"
 "                                   INPUT PROCESSING OPTIONS\n"
 "      -b,--bundle=<N>          bundle <N> files at a time\n"
