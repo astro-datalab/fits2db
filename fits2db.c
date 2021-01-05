@@ -553,6 +553,7 @@ main (int argc, char **argv)
              *  to do table/row filtering.
              */
             strcpy (ifname, *iflist);
+            i = access (ifname, F_OK);
             if (strcmp(ifname,"stdin") == 0 || ifname[0] == '-') {
                 strcpy (ofname, "stdout");
                 oname = strdup ("stdout");
@@ -617,7 +618,7 @@ main (int argc, char **argv)
 
             /*  Do the conversion if we have a FITS file.
              */
-            if (strcmp(ifname,"stdin") > 0 && ifname[0] != '-')
+            if (strcmp(ifname,"stdin") == 0 && ifname[0] != '-')
                 continue;
             if (dl_isFITS (ifname) || dl_isGZip (ifname)) {
                 if (verbose)
