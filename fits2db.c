@@ -341,7 +341,7 @@ main (int argc, char **argv)
 {
     char **pargv, optval[SZ_FNAME], *prog_name;
     char **iflist = NULL, **ifstart = NULL;
-    char  *iname = NULL, *oname = NULL, tmp[SZ_FNAME];
+    char  *iname = NULL, *oname = NULL, tmp[2*SZ_PATH];
     int    i, ch = 0, status = 0, pos = 0;
 
 
@@ -559,23 +559,23 @@ main (int argc, char **argv)
                 if (!noop)
                     dl_fits2db (ifname, oname, i, i, nfiles);
                 break;
-            } else if (access (ifname, F_OK) < 0) {
+            } else if (access (ifname, F_OK) != 0) {
                 fprintf (stderr, "Error: Cannot access file '%s'\n", ifname);
                 continue;
             }
 
             if (extnum >= 0) {
-                memset (tmp, 0, SZ_FNAME);
+                memset (tmp, 0, SZ_PATH);
                 sprintf (tmp, "%s[%d]", ifname, extnum);
                 strcpy (ifname, tmp);
             }
             if (extname) {
-                memset (tmp, 0, SZ_FNAME);
+                memset (tmp, 0, SZ_PATH);
                 sprintf (tmp, "%s[%s]", ifname, extname);
                 strcpy (ifname, tmp);
             }
             if (expr) {
-                memset (tmp, 0, SZ_FNAME);
+                memset (tmp, 0, SZ_PATH);
                 sprintf (tmp, "%s[%s]", ifname, expr);
                 strcpy (ifname, tmp);
             }
@@ -617,7 +617,7 @@ main (int argc, char **argv)
 
             /*  Do the conversion if we have a FITS file.
              */
-            if (strcmp(ifname,"stdin") > 0 && ifname[0] != '-')
+            if (strcmp(ifname,"stdin") == 0 || ifname[0] == '-')
                 continue;
             if (dl_isFITS (ifname) || dl_isGZip (ifname)) {
                 if (verbose)
@@ -2681,9 +2681,9 @@ dl_paramInit (int argc, char *argv[], char *opts, struct option long_opts[])
 		     *  "--foo=bar" or "--foo bar" or "foo=bar".  We need to 
 		     *  rewrite it to be acceptable to getopt_long().
 		     */
-		    char new[SZ_ARG];
+		    char new[SZ_PATH];
 
-		    memset (new, 0, SZ_ARG);
+		    memset (new, 0, SZ_PATH);
 		    for (j=0; (char *)long_opts[j].name; j++) {
 			if ((int) long_opts[j].val == (int) arg[1]) {
 			    sprintf (new, "--%s=%s",long_opts[j].name, &arg[3]);
