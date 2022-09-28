@@ -2087,7 +2087,7 @@ dl_printFloat (unsigned char *dp, ColPtr col)
                     else if (format == TAB_POSTGRES)
                         memcpy (optr, "NaN", (len = strlen ("NaN")));
                     else {
-                        sprintf (valbuf, "%lf", (double) rval);
+                        sprintf (valbuf, "%lg", (double) rval);
                         memcpy (optr, valbuf, (len = strlen (valbuf)));
                     }
                     olen += len, optr += len;
@@ -2102,16 +2102,16 @@ dl_printFloat (unsigned char *dp, ColPtr col)
                         memcpy (optr, val, (len = strlen (val)));
 
                     } else {
-                        sprintf (valbuf, "%lf", (double) rval);
+                        sprintf (valbuf, "%lg", (double) rval);
                         memcpy (optr, valbuf, (len = strlen (valbuf)));
                     }
                     olen += len, optr += len;
 
                 } else {
                     if (format == TAB_IPAC)
-                        sprintf (valbuf, "%*f", col->dispwidth, (double) rval);
+                        sprintf (valbuf, "%*g", col->dispwidth, (double) rval);
                     else
-                        sprintf (valbuf, "%f", (double) rval);
+                        sprintf (valbuf, "%g", (double) rval);
 
                     memcpy (optr, valbuf, (len = strlen (valbuf)));
                     olen += len, optr += len;
@@ -2177,7 +2177,7 @@ dl_printDouble (unsigned char *dp, ColPtr col)
                     else if (format == TAB_POSTGRES)
                         memcpy (optr, "NaN", (len = strlen ("NaN")));
                     else {
-                        sprintf (valbuf, "%.16lf", (double) dval);
+                        sprintf (valbuf, "%.16lg", (double) dval);
                         memcpy (optr, valbuf, (len = strlen (valbuf)));
                     }
                     olen += len, optr += len;
@@ -2192,16 +2192,16 @@ dl_printDouble (unsigned char *dp, ColPtr col)
                         memcpy (optr, val, (len = strlen (val)));
 
                     } else {
-                        sprintf (valbuf, "%.16lf", (double) dval);
+                        sprintf (valbuf, "%.16lg", (double) dval);
                         memcpy (optr, valbuf, (len = strlen (valbuf)));
                     }
                     olen += len, optr += len;
 
                 } else {
                     if (format == TAB_IPAC)
-                        sprintf (valbuf, "%*f", col->dispwidth, (double) dval);
+                        sprintf (valbuf, "%*g", col->dispwidth, (double) dval);
                     else
-                        sprintf (valbuf, "%.16f", (double) dval);
+                        sprintf (valbuf, "%.16g", (double) dval);
 
                     memcpy (optr, valbuf, (len = strlen (valbuf)));
                     olen += len, optr += len;
@@ -2267,7 +2267,7 @@ dl_printRandom (void)
 
     } else {
         memset (valbuf, 0, SZ_VALBUF);
-        sprintf (valbuf, "%f", rval);
+        sprintf (valbuf, "%g", rval);
         memcpy (optr, valbuf, (len = strlen (valbuf)));
         olen += len;
         optr += len;
