@@ -2087,7 +2087,7 @@ dl_printFloat (unsigned char *dp, ColPtr col)
                     else if (format == TAB_POSTGRES)
                         memcpy (optr, "NaN", (len = strlen ("NaN")));
                     else {
-                        sprintf (valbuf, "%lg", (double) rval);
+                        sprintf (valbuf, "%.8lg", (double) rval);
                         memcpy (optr, valbuf, (len = strlen (valbuf)));
                     }
                     olen += len, optr += len;
@@ -2102,7 +2102,7 @@ dl_printFloat (unsigned char *dp, ColPtr col)
                         memcpy (optr, val, (len = strlen (val)));
 
                     } else {
-                        sprintf (valbuf, "%lg", (double) rval);
+                        sprintf (valbuf, "%.8lg", (double) rval);
                         memcpy (optr, valbuf, (len = strlen (valbuf)));
                     }
                     olen += len, optr += len;
@@ -2111,7 +2111,7 @@ dl_printFloat (unsigned char *dp, ColPtr col)
                     if (format == TAB_IPAC)
                         sprintf (valbuf, "%*g", col->dispwidth, (double) rval);
                     else
-                        sprintf (valbuf, "%g", (double) rval);
+                        sprintf (valbuf, "%.8g", (double) rval);
 
                     memcpy (optr, valbuf, (len = strlen (valbuf)));
                     olen += len, optr += len;
@@ -2267,7 +2267,7 @@ dl_printRandom (void)
 
     } else {
         memset (valbuf, 0, SZ_VALBUF);
-        sprintf (valbuf, "%g", rval);
+        sprintf (valbuf, "%.8g", rval);
         memcpy (optr, valbuf, (len = strlen (valbuf)));
         olen += len;
         optr += len;
