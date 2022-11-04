@@ -1512,7 +1512,7 @@ dl_printSQLHdr (char *tablename, fitsfile *fptr, int firstcol, int lastcol,
         if (format == TAB_POSTGRES) {
             fprintf (ofd, "\nCOPY %s (", tablename);
             dl_printHdr (firstcol, lastcol, ofd);
-            fprintf (ofd, ") FROM stdin DELIMITER '%c';\n", delimiter);
+	    fprintf (ofd, ") FROM stdin CSV DELIMITER '%c';\n", delimiter);
         } else if (format == TAB_MYSQL || format == TAB_SQLITE) {
             fprintf (ofd, "\nINSERT INTO %s (", tablename);
             dl_printHdr (firstcol, lastcol, ofd);
@@ -1675,8 +1675,9 @@ dl_printCol (unsigned char *dp, ColPtr col, char end_char)
             *optr++ = quote_char, *optr++ = '(';
             olen += 2;
         } else {
-            *optr++ = '{';
-            olen += 1;
+	    memcpy (optr, "\"{", 2);
+	    optr += 2;
+            olen += 2;
         }
     }
 
@@ -1744,8 +1745,9 @@ dl_printCol (unsigned char *dp, ColPtr col, char end_char)
             *optr++ = quote_char, *optr++ = ')';
             olen += 2;
         } else {
-            *optr++ = '}';
-            olen += 1;
+	    memcpy (optr, "}\"", 2);
+	    optr += 2;
+            olen += 2;
         }
     }
 
