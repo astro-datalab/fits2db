@@ -1,5 +1,11 @@
 from distutils.core import setup, Extension
 
+# This setup file assumes that the fitsio include file fitsio.h lives in
+# /usr/local/include
+# By the same token the library libcfitsio.a lives # in /usr/local/lib
+# If your installation differs from this, then change /usr/local/include
+# and lib paths below to reflect your fitsio installation.
+
 def main():
 
     fits2db_ext = Extension('fits2db',
