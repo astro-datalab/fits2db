@@ -279,7 +279,7 @@ static void Usage (void);
 
 static void dl_escapeCSV (char* in);
 static void dl_quote (char* in);
-static void dl_fits2db (char *iname, char *oname, int filenum, 
+static void dl_fits2db (char *iname, char *oname, int filenum,
                             int bnum, int nfiles);
 static void dl_printHdr (int firstcol, int lastcol, FILE *ofd);
 static void dl_printIPACTypes (char *tablename, fitsfile *fptr, int firstcol,
@@ -330,6 +330,127 @@ static char *sstrip (char *s);
 static char *time_stamp (void);
 static int is_swapped (void);
 
+#ifdef PYTHON_EXT
+
+#define PY_SSIZE_T_CLEAN
+
+#include <Python.h>
+
+char    *dl_fits2db_error;           // Is there an error in dl_fits2db?
+char    *create_table_buffer = NULL;
+size_t  create_table_bufferSize = 0;
+FILE    *create_table_stream = (FILE *)NULL;
+
+PyObject *Fits2dbException;
+PyObject *Fits2dbArrayException;
+
+static PyObject *method_fits2db(PyObject *self, PyObject *args) {
+    char *iname, *oname= NULL;
+
+    int bnum = 0;
+    int nfiles = 1;
+    do_binary = 1;
+
+    /* I can't not find a way to clean up after the return statement
+     * in this function.
+     * So if the fits2db is called many times from the python code,
+     * the create_table_buffer is probably allocated and not null
+     * In that case we need to free it before continuing.
+     */
+    if (create_table_buffer != NULL) {
+	free(create_table_buffer);
+    }
+
+    /* Parse arguments */
+    if(!PyArg_ParseTuple(args, "sss|p", &iname, &oname, &tablename, &do_binary)) {
+        return NULL;
+    }
+
+
+    // We want the create table statement
+    do_create ++;
+
+    dl_fits2db(iname, oname, access(iname, F_OK), bnum, nfiles);
+    if (PyErr_Occurred() != NULL) {
+	return NULL;
+    }
+
+    // reset the do_create flag
+    do_create = 0;
+
+    if (create_table_stream != NULL) {
+	//printf("closing create_table_stream\n");
+	fclose(create_table_stream);
+    }
+
+    // return create table statement
+    return PyUnicode_DecodeUTF8(create_table_buffer, strlen(create_table_buffer), NULL);
+}
+
+static PyMethodDef Fits2dbMethods[] = {
+        {"fits2db", method_fits2db, METH_VARARGS,
+         "Python interface for fits2db C library function"},
+        {NULL, NULL, 0, NULL}
+};
+
+
+static struct PyModuleDef fits2dbmodule = {
+        PyModuleDef_HEAD_INIT,
+        "fits2db",
+        "Python interface for the fits2db C library function",
+        -1,
+        Fits2dbMethods
+};
+
+PyObject *m;
+PyMODINIT_FUNC PyInit_fits2db(void) {
+
+    //PyObject *m;
+
+    m = PyModule_Create(&fits2dbmodule);
+
+    if (m == NULL) {
+        return NULL;
+    }
+
+    Fits2dbException = PyErr_NewExceptionWithDoc(
+	    				"fits2db.ExceptionBase",
+					"Base exception class for fitsdb.",
+					NULL,  /* PyObject base */
+					NULL   /* PyObject dict */);
+
+    if ( ! Fits2dbException ) {
+	return NULL;
+    } else {
+    	//Py_XINCREF(Fits2dbException);
+    	if (PyModule_AddObject(m, "ExceptionBase", Fits2dbException) < 0) {
+        	Py_XDECREF(Fits2dbException);
+        	Py_CLEAR(Fits2dbException);
+        	Py_DECREF(m);
+        	return NULL;
+	}
+    }
+
+    Fits2dbArrayException = PyErr_NewExceptionWithDoc("fits2db.ArrayException",
+					      "Array not supported in binary mode exception",
+					      Fits2dbException,   /* PyObject base */
+					      NULL                /* PyObject dict */);
+    if ( ! Fits2dbArrayException ) {
+	return NULL;
+    } else {
+    	//Py_XINCREF(Fits2dbArrayException);
+    	if (PyModule_AddObject(m, "ArrayException", Fits2dbArrayException) < 0) {
+        	Py_XDECREF(Fits2dbArrayException);
+        	Py_CLEAR(Fits2dbArrayException);
+        	Py_DECREF(m);
+        	return NULL;
+	}
+    }
+
+    return  m;
+}
+
+#endif
 
 
 /**
@@ -756,9 +877,14 @@ dl_fits2db (char *iname, char *oname, int filenum, int bnum, int nfiles)
                         for (c=firstcol; c <= lastcol; c++) {
                             ColPtr col = (ColPtr) &inColumns[c];
                             if (col->type != TSTRING && col->repeat > 1) {
-                                fprintf (stderr, "Warning: binary mode not "
-                                    "supported for array columns, disabling\n");
-                                fflush (stderr);
+#ifdef PYTHON_EXT
+                                dl_fits2db_error = "binary mode not supported for array columns";
+				PyErr_SetString(Fits2dbArrayException, dl_fits2db_error);
+#else
+				fprintf (stderr, "Warning: binary mode not "
+						 "supported for array columns, disabling\n");
+				fflush (stderr);
+#endif
                                 do_binary = 0;
                                 break;
                             }
@@ -767,8 +893,14 @@ dl_fits2db (char *iname, char *oname, int filenum, int bnum, int nfiles)
 
                     // This is some sort of SQL output.
                     if (do_create)
+#ifdef PYTHON_EXT
+			create_table_stream = open_memstream(&create_table_buffer, &create_table_bufferSize);
                         dl_createSQLTable (tablename, fptr, firstcol, lastcol,
-                            ofd);
+                            create_table_stream);
+#else
+			dl_createSQLTable (tablename, fptr, firstcol, lastcol,
+					   ofd);
+#endif
                     if (do_truncate) {
                         fprintf (ofd, "TRUNCATE TABLE %s;\n", tablename);
                         fflush (ofd);
@@ -859,7 +991,7 @@ dl_fits2db (char *iname, char *oname, int filenum, int bnum, int nfiles)
                     /*  Print all the columns in the table.
                      */
                     for (i=firstcol; i <= ncols; i++)
-                        dp = dl_printCol (dp, &inColumns[i], 
+                        dp = dl_printCol (dp, &inColumns[i],
                                     (i < ncols ? arr_delimiter : '\n'));
 
 
@@ -1314,7 +1446,13 @@ dl_createSQLTable (char *tablename, fitsfile *fptr, int firstcol, int lastcol,
 
     for (i=1; i <= numOutCols; i++) {             // print column types
         col = (ColPtr) &outColumns[i];
-        fprintf (ofd, "    %s\t%s", col->colname, col->coltype);
+#ifdef PYTHON_EXT
+	/* The python code quotes column names so lets follow that
+	 * when dealing with the python end */
+        fprintf (ofd, "    \"%s\"\t%s", col->colname, col->coltype);
+#else
+	fprintf (ofd, "    %s\t%s", col->colname, col->coltype);
+#endif
         if (i < numOutCols)
             fprintf (ofd, ",\n");
     }
@@ -1337,8 +1475,25 @@ dl_printSQLHdr (char *tablename, fitsfile *fptr, int firstcol, int lastcol,
                     FILE *ofd)
 {
     int   hdr_extn = 0;
-    char  copy_buf[160];
 
+#ifdef PYTHON_EXT
+    // If binary mode write binary header
+    if (do_binary && format == TAB_POSTGRES) {
+        write (fileno(ofd), pgcopy_hdr, len_pgcopy_hdr);   // header string
+        write (fileno(ofd), &hdr_extn, sz_int);            // header extn length
+    } else {
+	// if CSV print header
+        if (format == TAB_POSTGRES) {
+            dl_printHdr (firstcol, lastcol, ofd);
+	    fflush(ofd);
+	    fprintf(ofd, "\n");
+	    fflush(ofd);
+	}
+    }
+    // no SQL header if it is a PYTHON extension
+    return;
+#else
+    char  copy_buf[160];
 
     if (! do_load)
         return;
@@ -1365,6 +1520,7 @@ dl_printSQLHdr (char *tablename, fitsfile *fptr, int firstcol, int lastcol,
         }
     }
     fflush (ofd);
+#endif
 }
 
 
@@ -3019,3 +3175,49 @@ Usage (void)
 "\n\n"
     );
 }
+
+
+/**
+ * Python extension of fits2db
+ *
+ * This is a python wrapper of the fits2db C utility, to be used in the
+ * querymanager python code.
+ *
+ * This version allows only three arguments:
+ * .- input file
+ * .- output file
+ * .- binary mode (defaulted to True)
+ *
+ * Also the fits2db raises one Python exception ArrayException which happens
+ * when the input file contains embedded arrays.
+ *
+ * ***************************************************************************
+ * **NOTE** :
+ *   One important difference with the fits2db standalone version is that this
+ *   python extension doesn't generate an SQL header, only the data body.
+ * ***************************************************************************
+ *
+ * from fits2db import fits2db, ArrayException
+ *
+ * input_fits = "/tmp/22MM_row.fits"
+ * output_fits = "/tmp/22MM_bin"
+ *
+ * try:
+ *     fits2db(input_fits, output_fits)
+ * except ArrayException as e:
+ *     # fits2db might fail if trying to convert a fits file
+ *     # with arrays into binary format.
+ *     # In that case set the binary flag to False
+ *     #  run fits2db as comma sep csv
+ *     fits2db(input_fits, output_fits, False)
+ *
+ *
+ * The following links provide ample information about how to
+ * do python C extensions:
+ * https://realpython.com/build-python-c-extension-module/
+ * https://docs.python.org/3/extending/extending.html#
+ * memory stream in C
+ * https://stackoverflow.com/questions/3481157/string-stream-in-c
+ *
+ *
+ */
