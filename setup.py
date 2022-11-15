@@ -18,8 +18,8 @@ def main():
     setup(name="fits2db",
           version="1.0.0",
           description="Python interface to prepare fits file for DB import ",
-          author="Igor Suarez",
-          author_email="igor.suarez-sola@noirlab.edu",
+          author="Igor Suarez (Extension), Mike Fitzpatrick (FITS2DB)",
+          author_email="igor.suarez-sola@noirlab.edu, mike.fitzpatrick@noirlab.edu",
           ext_modules=[fits2db_ext])
 
 if __name__ == "__main__":
