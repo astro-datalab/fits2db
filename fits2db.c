@@ -705,15 +705,14 @@ main (int argc, char **argv)
             /*  Construct the output filename.
              */
             if (basename) {
-                if (concat) {
-                    if (i == 0)
-                        sprintf (ofname, "%s.%s", basename, dl_fextn());
-                    else if (i > 0)
-                        sprintf (ofname, "%s%*d.%s", basename, ndigits, 
-                                    i, dl_fextn());
-                } else 
-                    sprintf (ofname, "%s%*d.%s", basename, ndigits, 
-                                i, dl_fextn());
+                if (concat && i == 0) {
+                    sprintf (ofname, "%s.%s", basename, dl_fextn());
+                } else {
+		    char fmt[SZ_PATH];
+                    memset (fmt, 0, SZ_PATH);
+                    sprintf (fmt, "%%s%%%dd.%%s", ndigits);
+                    sprintf (ofname, fmt, basename, i, dl_fextn());
+                }
 
             } else if (oname) {
                 strcpy (ofname, oname);
@@ -892,7 +891,7 @@ dl_fits2db (char *iname, char *oname, int filenum, int bnum, int nfiles)
                     }
 
                     // This is some sort of SQL output.
-                    if (do_create)
+                    if (do_create) {
 #ifdef PYTHON_EXT
 			create_table_stream = open_memstream(&create_table_buffer, &create_table_bufferSize);
                         dl_createSQLTable (tablename, fptr, firstcol, lastcol,
@@ -901,6 +900,7 @@ dl_fits2db (char *iname, char *oname, int filenum, int bnum, int nfiles)
 			dl_createSQLTable (tablename, fptr, firstcol, lastcol,
 					   ofd);
 #endif
+		    }
                     if (do_truncate) {
                         fprintf (ofd, "TRUNCATE TABLE %s;\n", tablename);
                         fflush (ofd);
@@ -3030,7 +3030,7 @@ dl_fextn (void)
 static char *
 time_stamp()
 {
-    char *timestamp = (char *)malloc(sizeof(char) * 16);
+    char *timestamp = (char *)calloc(128, sizeof(char));
     time_t ltime;
     ltime=time(NULL);
     struct tm *tm;
