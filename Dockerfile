@@ -2,18 +2,19 @@
 # FITS2DB -- Docker container for the FITS2DB task
 #
 # To Build:     % docker build -t fits2db .
+#
 # To Run       
+#       # Process a file in the current user directory:
 #       % docker run fits2db --sql=postgres --create test.fits | psql
+#
+#       # Mount data from a path for processing:
 #       % docker run -v /<path>/:/data fits2db --sql=postgres \
 #                       -C /data/test.fits | psql
 
 FROM alpine
-RUN apk add --no-cache bash
 RUN apk add --no-cache build-base
 RUN apk add --no-cache curl-dev
-RUN apk add --no-cache cfitsio
 RUN apk add --no-cache cfitsio-dev
-RUN apk add --no-cache cfitsio-static
 
 WORKDIR /app
 COPY . /app
