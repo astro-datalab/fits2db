@@ -271,8 +271,8 @@ static struct option long_opts[] = {
 };
 
 
-/*  All tasks should declare a static Usage() method to print the help 
- *  text in response to a '-h' or '--help' flag.  The help text should 
+/*  All tasks should declare a static Usage() method to print the help
+ *  text in response to a '-h' or '--help' flag.  The help text should
  *  include a usage summary, a description of options, and some examples.
  */
 static void Usage (void);
@@ -317,9 +317,9 @@ static char *dl_SQLType (ColPtr col);
 static char *dl_makeTableName (char *fname);
 static char *dl_fextn (void);
 
-static char **dl_paramInit (int argc, char *argv[], char *opts, 
+static char **dl_paramInit (int argc, char *argv[], char *opts,
                     struct option long_opts[]);
-static int    dl_paramNext (char *opts, struct option long_opts[], 
+static int    dl_paramNext (char *opts, struct option long_opts[],
                     int argc, char *argv[], char *optval, int *posindex);
 static void   dl_paramFree (int argc, char *argv[]);
 
@@ -454,7 +454,7 @@ PyMODINIT_FUNC PyInit_fits2db(void) {
 
 
 /**
- *  Application entry point.  All DLApps tasks MUST contain this 
+ *  Application entry point.  All DLApps tasks MUST contain this
  *  method signature.
  */
 int
@@ -481,7 +481,7 @@ main (int argc, char **argv)
      *  rewrite the argv[] strings in a way dl_paramNext() can be used to
      *  parse them.  The programmatic interface allows "param=value" to
      *  be passed in, but the getopt_long() interface requires these to
-     *  be written as "--param=value" so they are not confused with 
+     *  be written as "--param=value" so they are not confused with
      *  positional parameters (i.e. any param w/out a leading '-').
      */
     prog_name = argv[0];
@@ -538,7 +538,7 @@ main (int argc, char **argv)
 	    case '3':  delimiter = '\t';
                        arr_delimiter='\t';
                        break;  // TSV
-	    case '4':  delimiter = '|'; 
+	    case '4':  delimiter = '|';
                        format = TAB_IPAC;
                        arr_delimiter='|';
                        break;
@@ -567,7 +567,7 @@ main (int argc, char **argv)
 	    case 'A':  addname = strdup (optval);       break;  // --add
 
 	    default:
-		fprintf (stderr, "%s: Invalid option '%s'\n", 
+		fprintf (stderr, "%s: Invalid option '%s'\n",
 					prog_name, optval);
 		return (ERR);
 	    }
@@ -622,7 +622,7 @@ main (int argc, char **argv)
     if (explode && format == TAB_POSTGRES) {
 	delimiter = '\t';
 	arr_delimiter = '\t';
-    } 
+    }
 
 
     /*  Generate the output file lists if needed.
@@ -633,7 +633,7 @@ main (int argc, char **argv)
          */
         if (oname && strcmp (oname, "-") == 0)
             free (oname), oname = NULL;
-        if (oname == NULL) 
+        if (oname == NULL)
             oname = strdup ("stdout");
     } else {
         if (oname)
@@ -751,7 +751,7 @@ main (int argc, char **argv)
                  * track of headers.  */
                 bnum = ((bnum+1) == bundle ? 0 : (bnum+1));
             } else
-                fprintf (stderr, "Error: Skipping non-FITS file '%s'.\n", 
+                fprintf (stderr, "Error: Skipping non-FITS file '%s'.\n",
                                     ifname);
         }
     }
@@ -811,10 +811,10 @@ dl_fits2db (char *iname, char *oname, int filenum, int bnum, int nfiles)
              *  and see if it is a table.
              */
             fits_movabs_hdu (fptr, 2, &hdutype, &status);
-         else 
+         else
             fits_get_hdu_type (fptr, &hdutype, &status); /* Get the HDU type */
 
-        if (hdutype == IMAGE_HDU) 
+        if (hdutype == IMAGE_HDU)
             printf ("Error: this program only converts tables, not images\n");
 
         else {
@@ -831,7 +831,7 @@ dl_fits2db (char *iname, char *oname, int filenum, int bnum, int nfiles)
             lastcol = ncols;
             chunk = (chunk > nrows ? nrows : chunk);
             nelem = chunk;
-            
+
 
             /*  Get the optimal I/O row size.
              */
@@ -858,7 +858,7 @@ dl_fits2db (char *iname, char *oname, int filenum, int bnum, int nfiles)
             if (filenum == 0 || !concat) {
 		dl_getColInfo (fptr, firstcol, lastcol);
 
-                if (!tablename) 
+                if (!tablename)
                     tablename = dl_makeTableName (iname);
 
                 if (format == TAB_DELIMITED)
@@ -910,7 +910,7 @@ dl_fits2db (char *iname, char *oname, int filenum, int bnum, int nfiles)
             } else {
                 // Make sure this file has the same columns.
                 if (dl_validateColInfo (fptr, firstcol, lastcol)) {
-                    fprintf (stderr, "Skipping unmatching table '%s'\n", 
+                    fprintf (stderr, "Skipping unmatching table '%s'\n",
                         iname);
                     return;
                 }
@@ -935,7 +935,7 @@ dl_fits2db (char *iname, char *oname, int filenum, int bnum, int nfiles)
 
 
             /*  Allocate the I/O buffer.
-             */                
+             */
             nbytes = nelem * naxis1;
             if (sidname) nbytes += (8 * naxis2);
             if (ridname) nbytes += (8 * naxis2);
@@ -943,7 +943,7 @@ dl_fits2db (char *iname, char *oname, int filenum, int bnum, int nfiles)
                 fprintf (stderr,
 		    "nelem=%d  naxis=[%ld,%ld]  nbytes=%ld  nrows=%d\n",
                     nelem, naxis1, naxis2, nbytes, (int)nrows);
-                
+
             data = (unsigned char *) calloc (1, nbytes * 8);
             obuf = (char *) calloc (1, nbytes * 8);
             olen = 0;
@@ -976,18 +976,18 @@ dl_fits2db (char *iname, char *oname, int filenum, int bnum, int nfiles)
                         unsigned short val = 0;
             		if (sidname) val++;
             		if (ridname) val++;
-                        val = (explode ? htons ((short) numOutCols+val) : 
+                        val = (explode ? htons ((short) numOutCols+val) :
                                          htons ((short) ncols+val));
                         memcpy (optr, &val, sz_short);
                         optr += sz_short;
                         olen += sz_short;
 
-                    } else if (single && 
+                    } else if (single &&
                         (format == TAB_SQLITE || format == TAB_MYSQL)) {
                             // For SQLite we print the header for each row.
                             dl_printHdrString (tablename);
                     }
-                
+
                     /*  Print all the columns in the table.
                      */
                     for (i=firstcol; i <= ncols; i++)
@@ -1020,7 +1020,7 @@ dl_fits2db (char *iname, char *oname, int filenum, int bnum, int nfiles)
 
             /*  Terminate the output stream.
              */
-            if ((concat && filenum == (nfiles-1)) || 
+            if ((concat && filenum == (nfiles-1)) ||
                 (bnum > 0 && bnum == (bundle-1))) {
 
                 if (format == TAB_POSTGRES) {
@@ -1089,7 +1089,7 @@ dl_getColInfo (fitsfile *fptr, int firstcol, int lastcol)
         fits_get_coltype (fptr, i, &icol->type, &icol->repeat,
             &icol->width, &status);
         fits_get_col_display_width (fptr, i, &icol->dispwidth, &status);
-        if (icol->type == TSTRING && do_quote) 
+        if (icol->type == TSTRING && do_quote)
             icol->dispwidth+= 2;
         icol->colnum = i;
 
@@ -1102,8 +1102,13 @@ dl_getColInfo (fitsfile *fptr, int firstcol, int lastcol)
             fits_make_keyn ("TDIM", i, keyword, &status);
             fits_read_key (fptr, TSTRING, keyword, dims, NULL, &status);
             if (status == 0)    // Dimension string usually means a 2-D array
-                icol->ndim = sscanf (dims, "(%d,%d)", 
+                icol->ndim = sscanf (dims, "(%d,%d)",
                     &icol->nrows, &icol->ncols);
+            if (icol->ndim == 1 && icol->nrows == icol->repeat) {
+                // In this case TDIM is extraneous, although technically correct.
+                icol->nrows = 1;
+                icol->ncols = icol->repeat;
+            }
             status = 0;
         }
     }
@@ -1112,12 +1117,12 @@ dl_getColInfo (fitsfile *fptr, int firstcol, int lastcol)
         fprintf (stderr, "Input Columns [%d]:\n", numInCols);
         for (i=1; i <= numInCols; i++) {
             icol = (ColPtr) &inColumns[i];
-            fprintf (stderr, "  %d  '%s'  rep=%ld nr=%d nc=%d\n", icol->colnum, 
-                icol->colname, icol->repeat, icol->nrows, icol->ncols);
+            fprintf (stderr, "  %d  '%s'  rep=%ld nr=%d nc=%d ndim=%d\n", icol->colnum,
+                icol->colname, icol->repeat, icol->nrows, icol->ncols, icol->ndim);
         }
     }
 
-    /* Now expand to create the output column information so we don't need 
+    /* Now expand to create the output column information so we don't need
      * to repeat this for each table type.  If we're exploding columns
      * compute all the output columns names, otherwise simply copy the input
      * names.
@@ -1163,6 +1168,11 @@ dl_validateColInfo (fitsfile *fptr, int firstcol, int lastcol)
             fits_read_key (fptr, TSTRING, keyword, dims, NULL, &status);
             if (status == 0)
                 col->ndim = sscanf (dims, "(%d,%d)", &col->nrows, &col->ncols);
+            if (col->ndim == 1 && col->nrows == col->repeat) {
+                // In this case TDIM is extraneous, although technically correct.
+                col->nrows = 1;
+                col->ncols = col->repeat;
+            }
             status = 0;
         }
     }
@@ -1171,8 +1181,8 @@ dl_validateColInfo (fitsfile *fptr, int firstcol, int lastcol)
         fprintf (stderr, "Table Columns [%d]:\n", numCols);
         for (i=1; i <= numCols; i++) {
             col = (ColPtr) &newColumns[i];
-            fprintf (stderr, "  %d  '%s'  rep=%ld nr=%d nc=%d\n", col->colnum, 
-                col->colname, col->repeat, col->nrows, col->ncols);
+            fprintf (stderr, "  %d  '%s'  rep=%ld nr=%d nc=%d ndim=%d\n", col->colnum,
+                col->colname, col->repeat, col->nrows, col->ncols, col->ndim);
         }
     }
 
@@ -1315,7 +1325,7 @@ dl_getOutputCols (fitsfile *fptr, int firstcol, int lastcol)
         memset (ocol->colname, 0, SZ_COLNAME);
         strcpy (ocol->colname, ridname);
 
-        if (format == TAB_IPAC || format == TAB_POSTGRES) 
+        if (format == TAB_IPAC || format == TAB_POSTGRES)
             strcpy (ocol->coltype, "real");
         numOutCols++;
     }
@@ -1325,7 +1335,7 @@ dl_getOutputCols (fitsfile *fptr, int firstcol, int lastcol)
         fprintf (stderr, "Output Columns [%d]:\n", numOutCols);
         for (i=1; i <= numOutCols; i++) {
             ocol = (ColPtr) &outColumns[i];
-            fprintf (stderr, "  %d  %-24s  '%s'\n", ocol->colnum, 
+            fprintf (stderr, "  %d  %-24s  '%s'\n", ocol->colnum,
                 ocol->colname, ocol->coltype);
         }
     }
@@ -1349,8 +1359,8 @@ dl_printHdr (int firstcol, int lastcol, FILE *ofd)
         fprintf (ofd, "|");
 
     /*  If we're using a serial ID column it isn't included in the data list
-     *  since the database fills in the value for us.  So, don't include it in 
-     *  the header when doing Postgres. 
+     *  since the database fills in the value for us.  So, don't include it in
+     *  the header when doing Postgres.
     if (format == TAB_POSTGRES && sidname)
         ncols--;
      */
@@ -1426,7 +1436,7 @@ dl_createSQLTable (char *tablename, fitsfile *fptr, int firstcol, int lastcol,
 
 
     /*  For MySQL we assume the output is being piped to the 'mysql' client,
-     *  if the database is being created we need to also create it before 
+     *  if the database is being created we need to also create it before
      *  creating the table.  If we don't specify the 'dbname' assume it exists
      *  and is an arg to the mysql client, so simply create the table.
      */
@@ -1436,12 +1446,12 @@ dl_createSQLTable (char *tablename, fitsfile *fptr, int firstcol, int lastcol,
         fflush (ofd);
     }
 
-                    
+
     if (do_drop) {
         fprintf (ofd, "DROP TABLE IF EXISTS %s CASCADE;\n", tablename);
         fflush (ofd);
     }
-                        
+
     fprintf (ofd, "CREATE TABLE IF NOT EXISTS %s (\n", tablename);
 
     for (i=1; i <= numOutCols; i++) {             // print column types
@@ -1584,7 +1594,7 @@ dl_SQLType (ColPtr col)
     switch (col->type) {
     case TBIT:                                          // NYI
     case TCOMPLEX:
-    case TDBLCOMPLEX:      
+    case TDBLCOMPLEX:
                     break;
     case TSTRING:   type = ((col->repeat > 1) ? "text" : "char");
                     break;
@@ -1636,7 +1646,7 @@ dl_IPACType (ColPtr col)
     case TDBLCOMPLEX:                                   // NYI
                     break;
 
-    case TSTRING:   type = "char";          
+    case TSTRING:   type = "char";
                     break;
     case TLOGICAL:
     case TBYTE:
@@ -1681,7 +1691,7 @@ dl_printCol (unsigned char *dp, ColPtr col, char end_char)
         }
     }
 
-                    
+
     if (format == TAB_IPAC && col->colnum == 1)
         *optr++ = '|', olen++;
     if ((format == TAB_MYSQL || format == TAB_SQLITE) && col->colnum == 1)
@@ -1689,12 +1699,12 @@ dl_printCol (unsigned char *dp, ColPtr col, char end_char)
 
     switch (col->type) {
     case TBIT:                          // TFORM='X'    bit
-        fprintf (stderr, "Error: Unsupported column type, col[%s] = %d\n", 
+        fprintf (stderr, "Error: Unsupported column type, col[%s] = %d\n",
             col->colname, col->type);
         break;
     case TCOMPLEX:                      // TFORM='C'    complex
     case TDBLCOMPLEX:                   // TFORM='M'    double complex
-        fprintf (stderr, "Error: Unsupported column type, col[%s] = %d\n", 
+        fprintf (stderr, "Error: Unsupported column type, col[%s] = %d\n",
             col->colname, col->type);
         break;
 
@@ -1735,7 +1745,7 @@ dl_printCol (unsigned char *dp, ColPtr col, char end_char)
         break;
 
     default:
-        fprintf (stderr, "Error: Unknown column type, col[%s] = %d\n", 
+        fprintf (stderr, "Error: Unknown column type, col[%s] = %d\n",
             col->colname, col->type);
         break;
     }
@@ -1758,7 +1768,7 @@ dl_printCol (unsigned char *dp, ColPtr col, char end_char)
         if ((format == TAB_MYSQL || format == TAB_SQLITE))
             *optr++ = ')', olen++;
     }
-    
+
     /*  For Postgres binary output where we've specified a serial value, add
      *  it to the output stream at the end of a row.  For text formats, add
      *  it as the last column of data.
@@ -1904,7 +1914,7 @@ dl_printLogical (unsigned char *dp, ColPtr col)
                 if (format == TAB_IPAC)
                     sprintf (valbuf, "%d", ((tolower((int)ch) == 't') ? 1 : 0));
                 else
-                    sprintf (valbuf, "%*d", col->dispwidth, 
+                    sprintf (valbuf, "%*d", col->dispwidth,
                         ((tolower((int)ch) == 't') ? 1 : 0));
                 memcpy (optr, valbuf, (len = strlen (valbuf)));
                 olen += len;
@@ -2473,7 +2483,7 @@ dl_makeTableName (char *fname)
 {
     char *ip, *tp, *np;
 
-    if (strcmp(fname,"stdin") == 0 || fname[0] == '-') 
+    if (strcmp(fname,"stdin") == 0 || fname[0] == '-')
         return (strdup("stdin_tab"));
 
     ip = strdup (fname);                // copy the input name
@@ -2708,7 +2718,7 @@ dl_error (int exit_code, char *error_message, char *tag)
 /**
  *  DL_ISFITS -- Test a file to see if it is a simple FITS file.
  */
-static int 
+static int
 dl_isFITS (char *fits_name)
 {
     register FILE *fp;
@@ -2738,7 +2748,7 @@ dl_isFITS (char *fits_name)
 /**
  *  DL_ISGZIP -- Test a file to see if it is GZip compressed.
  */
-static int 
+static int
 dl_isGZip (char *fname)
 {
     int   fp, value = 0;
@@ -2788,7 +2798,7 @@ dl_atoi (char *val)
 
 #define PARAM_DBG (getenv("PARAM_DBG")!=NULL||access("/tmp/PARAM_DBG",F_OK)==0)
 
-    
+
 static  int last_good_index = 0;
 
 /**
@@ -2837,7 +2847,7 @@ dl_paramInit (int argc, char *argv[], char *opts, struct option long_opts[])
 	    if (arg[0] == '-' && arg[1] != '-') {
 		if (arg[2] == '=') {
 		    /*  Argument is of the form '-f=bar' instead of the form
-		     *  "--foo=bar" or "--foo bar" or "foo=bar".  We need to 
+		     *  "--foo=bar" or "--foo bar" or "foo=bar".  We need to
 		     *  rewrite it to be acceptable to getopt_long().
 		     */
 		    char new[SZ_PATH];
@@ -2881,7 +2891,7 @@ dl_paramInit (int argc, char *argv[], char *opts, struct option long_opts[])
     }
 
     if (PARAM_DBG) {
-	for (i=0; i < argc; i++) 
+	for (i=0; i < argc; i++)
 	    fprintf (stderr, "pargv[%d] = '%s'\n", i, pargv[i]);
     }
 
@@ -2928,9 +2938,9 @@ dl_paramNext (char *opts, struct option long_opts[], int argc, char *argv[],
 
     if (ch >= 0) {
         if (ch > 0 && optarg) {
-	    if ((strchr (optarg, (int)'=') != 0) && (optarg[0] != '-') && 
+	    if ((strchr (optarg, (int)'=') != 0) && (optarg[0] != '-') &&
 	        (argv[apos][0] == '-' && argv[apos][1] != '-') ) {
-		    fprintf (stderr, 
+		    fprintf (stderr,
 			"Error: invalid argument = '%s' in dl_paramNext()\n",
 		        argv[apos]);
                     fflush (stderr);
@@ -2966,7 +2976,7 @@ dl_paramNext (char *opts, struct option long_opts[], int argc, char *argv[],
     last_good_index = optind;
 
     if (PARAM_DBG) {
-	fprintf (stderr, 
+	fprintf (stderr,
 	    "paramNext: ch=%d (%c) optval='%s' optarg='%s' index=%d\n",
       	    ch, ch, optval, optarg, index);
     }
@@ -2985,7 +2995,7 @@ dl_paramNext (char *opts, struct option long_opts[], int argc, char *argv[],
  *  @param  argv        argument vector
  *  @returns            nothing
  */
-static void 
+static void
 dl_paramFree (int argc, char *argv[])
 {
     register int i;
@@ -3037,7 +3047,7 @@ time_stamp()
     tm=localtime(&ltime);
 
     sprintf(timestamp,"%04d-%02d-%02d %02d:%02d:%02d",
-        tm->tm_year+1900, tm->tm_mon, tm->tm_mday, 
+        tm->tm_year+1900, tm->tm_mon, tm->tm_mday,
         tm->tm_hour, tm->tm_min, tm->tm_sec);
     return timestamp;
 }

@@ -48,7 +48,7 @@ compile the source manually with a command such as:
             -L/usr/local/lib -lcfitsio -lm
 
 The task requires CFITSIO (not included here) in order to comple, so the
-`-I` and `-L` flags (or the definitions in the Makefile) may need to be 
+`-I` and `-L` flags (or the definitions in the Makefile) may need to be
 modified for your system.
 
 ###  Usage:
@@ -148,7 +148,5 @@ Examples of this type of filtering include:
     fits2db tab.fits[col -PI,-ETA]         - list all but the PI and ETA cols
     fits2db tab.fits[col -PI][#row < 101]  - combined case
 
-For details on table row and column filtering, see the [CFITSIO documentation]
-(https://heasarc.gsfc.nasa.gov/docs/software/fitsio/c/c_user/cfitsio.html).
-
-
+For details on table row and column filtering, see the
+[CFITSIO documentation](https://heasarc.gsfc.nasa.gov/docs/software/fitsio/c/c_user/cfitsio.html).

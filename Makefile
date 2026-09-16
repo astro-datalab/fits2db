@@ -22,10 +22,14 @@ ifeq ($(PLATFORM),Darwin)
     else
         CARCH   = 
     endif
+    ARCH_INCLUDE= -I/opt/local/include
+    ARCH_LIBS   = -L/opt/local/lib
 else
     CLIBS       = -lm -lpthread
     CARCH       = 
     LIBCURL	=
+    ARCH_INCLUDE=
+    ARCH_LIBS   =
 endif
         
 DEPLIBS         = -lcfitsio -lpthread -lm
@@ -36,7 +40,7 @@ LIBCFITSIO	= -lcfitsio
 
 # includes, flags and libraries
 CC 	    = gcc
-CINCS  	    = -I$(HERE) -I./ -I../include -I/usr/include/cfitsio -I/usr/local/include
+CINCS  	    = -I$(HERE) -I./ -I../include -I/usr/include/cfitsio -I/usr/local/include $(ARCH_INCLUDE)
 
 # list of source and include files
 
@@ -51,7 +55,7 @@ TARGETS	    = $(C_TASKS)
 SRCS	    = $(C_SRCS)
 OBJS	    = $(C_OBJS)
 HOST_LIBS   = $(LIBCFITSIO) -lpthread -lm
-LIBS        = -L/usr/local/lib $(HOST_LIBS)
+LIBS        = -L/usr/local/lib $(ARCH_LIBS) $(HOST_LIBS)
 
 
 all: 
